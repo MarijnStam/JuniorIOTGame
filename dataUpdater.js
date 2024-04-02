@@ -16,6 +16,7 @@ function updateNodeList(data){
   var nodeObjectList = [];
   for (var node in data.nodes) {
     var nodeObject = {};
+    var gatewayObjects = [];
     nodeObject.dev_id = data.nodes[node].dev_id;
     nodeObject.app_id = data.nodes[node].app_id;
     nodeObject.time = data.nodes[node].time;
@@ -25,6 +26,25 @@ function updateNodeList(data){
     nodeObject.lat = parseFloat(data.nodes[node].gps_lat);
     nodeObject.temp = parseFloat(data.nodes[node].temp);
     nodeObject.moist = parseFloat(data.nodes[node].moist);
+
+    //Check if node has a log (it is a proper node if this is the case)
+    //parse the gateway(s) afterwards
+    if(nodeObject.log != undefined)
+    {
+      //NOTE Fetch starts only after all iterations are already done (?)
+      console.log(nodeObject.dev_id)
+      fetch(nodeObject.url )
+      .then(res => res.json())
+      .then(out =>
+        out.body.uplink_message.rx_metadata.forEach(element => {
+          console.log(`Pushing to ${nodeObject.dev_id} ${element.channel_rssi}`)
+          gatewayObjects.push(element);
+        }))
+      .catch(err => { throw err });
+
+      nodeObject.gateways = gatewayObjects;
+    }
+    
     nodeObjectList.push(nodeObject);
   }
   return nodeObjectList;
