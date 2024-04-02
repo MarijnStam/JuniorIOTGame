@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <title>AlkmaarGame</title>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v0.41.0/mapbox-gl.js'></script>
+    <link href='mapbox-gl.css' type="text/css" rel='stylesheet'>
+    <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script>var map3d = false;</script>
+    <script src='dataUpdater.js'></script>
+    <script src='script.js'></script>
+    <script src='3d.js'></script>
+  </head>
+  <body>
+    <leaflet id='map'></leaflet>
+    <div class="score">
+      <select class='dropDown'><option value='game'>Game</option><option value='temp'>Temp</option><option value='pm'>Pm</option></select><br>
+    </div>
+    <script>var dropDown = "<select class='dropDown'><option value='game'>Game</option><option value='temp'>Temp</option><option value='pm'>Pm</option></select><br>"
+    </script>
+    <script>initMap();</script>
+  </body>
+</html>
