@@ -30,14 +30,39 @@ function initMap() {
   }, refreshTime);
 }
 
-function update(zoom) {
-
+async function update(zoom) {
+  nodes = [];
   //updates the marker positions to what the new JSON specifies
-  updateJson(dataJsonURL, function(json) {
-    createMarkerList(createPointsJson(updateNodeList(json)), true, map);
+  await fetchJSON(dataJsonURL, function(json) {
+    nodes = updateNodeList(json);
+    createMarkerList(createNodePointsJson(nodes), true, map);
   });
+
+  // Check if node has a log (it is a proper node if this is the case)
+  // parse the gateway(s) afterwards
+  for (node of nodes) {
+    if(node.log != undefined)
+    {
+      gatewayObjects = [];
+      //Fetch the gateway info by getting the raw node JSON data which contains gateway metadata
+      await fetchJSON(node.url, function(json) {
+        //A node can have multiple gateways, register each. 
+        json.body.uplink_message.rx_metadata.forEach(gateway => {
+          registeredGateway = registerGateway(gateway)
+          gatewayObjects.push(registeredGateway);
+        });
+      });
+  
+      //Link the gateway objects back to the node so we can visualize this on the map (TODO LATER)
+      node.gateways = gatewayObjects;
+    }
+  }
+
+  //Show the gateways on the map
+  createMarkerList(createGatewayPointsJson(gateways), true, map);
+
   //updates the grid to what the new JSON specifies
-  updateJson(gridJsonURL, function(json) {
+  await fetchJSON(gridJsonURL, function(json) {
     let reternVal = updateGrid(json);
     let grid = reternVal.grid;
     let teams = reternVal.teams;
@@ -163,7 +188,7 @@ function createGridGeoJSON(grid, teams) {
   return json;
 }
 
-function createPointsJson(data) {
+function createNodePointsJson(data) {
   json = {
     "type": "FeatureCollection",
     "features": []
@@ -193,6 +218,38 @@ function createPointsJson(data) {
       }
     };
     json.features.push(feature);
+  }
+  return (json);
+}
+
+function createGatewayPointsJson(data) {
+  json = {
+    "type": "FeatureCollection",
+    "features": []
+  };
+  for (var i = 0; i < data.length; i++) {
+    //Some gateways do not have a location property, skip these
+    if (data[i].hasOwnProperty('location'))
+    {
+      var feature = {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            data[i].location.longitude,
+            data[i].location.latitude
+          ]
+        },
+        "properties": {
+          "name": data[i].gateway_ids.gateway_id,
+          "img": "icons/gateway.png",
+          "message": "<span class='popup'>"
+        + data[i].gateway_ids.gateway_id
+        +"</span>"
+        }
+      };
+      json.features.push(feature);
+    }
   }
   return (json);
 }

@@ -1,9 +1,10 @@
 var dataJsonURL = "http://junioriotchallenge.nl/ttn_data/gamedata/nodes.json";
 var gridJsonURL = "http://junioriotchallenge.nl/ttn_data/gamedata/game.json";
+var gateways = [];
 
-function updateJson(fetchURL, callback){
+async function fetchJSON(fetchURL, callback){
   let dataJson;
-  fetch(fetchURL)
+  await fetch(fetchURL)
     .then(function(response) {
       return response.json();
   }).then(function(myJson) {
@@ -16,7 +17,6 @@ function updateNodeList(data){
   var nodeObjectList = [];
   for (var node in data.nodes) {
     var nodeObject = {};
-    var gatewayObjects = [];
     nodeObject.dev_id = data.nodes[node].dev_id;
     nodeObject.app_id = data.nodes[node].app_id;
     nodeObject.time = data.nodes[node].time;
@@ -26,24 +26,7 @@ function updateNodeList(data){
     nodeObject.lat = parseFloat(data.nodes[node].gps_lat);
     nodeObject.temp = parseFloat(data.nodes[node].temp);
     nodeObject.moist = parseFloat(data.nodes[node].moist);
-
-    //Check if node has a log (it is a proper node if this is the case)
-    //parse the gateway(s) afterwards
-    if(nodeObject.log != undefined)
-    {
-      //NOTE Fetch starts only after all iterations are already done (?)
-      console.log(nodeObject.dev_id)
-      fetch(nodeObject.url )
-      .then(res => res.json())
-      .then(out =>
-        out.body.uplink_message.rx_metadata.forEach(element => {
-          console.log(`Pushing to ${nodeObject.dev_id} ${element.channel_rssi}`)
-          gatewayObjects.push(element);
-        }))
-      .catch(err => { throw err });
-
-      nodeObject.gateways = gatewayObjects;
-    }
+    nodeObject.gateways = {};
     
     nodeObjectList.push(nodeObject);
   }
@@ -88,3 +71,20 @@ function updateGrid(data) {
   return {'grid': grid, 'teams': teams}
 }
 
+function registerGateway(gateway)
+{
+  //Check if the passed gateway already exists in our static list of gateways
+  //findIndex will either return index of object if it was matched, or -1 if it is not present
+  let num = gateways.findIndex(registeredGateway => {
+    //Try and match with a unique ID
+    return registeredGateway.gateway_ids.eui == gateway.gateway_ids.eui;
+  });
+
+  //Gateway not found yet, push to list
+  if(num == -1)
+  {
+    num = (gateways.push(gateway) - 1);
+  }
+  
+  return gateways[num];
+}
