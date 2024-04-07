@@ -28,6 +28,9 @@ function initMap() {
   window.setInterval(function() {
     update(false)
   }, refreshTime);
+
+  var gatewayCheckbox = document.getElementById('gatewayCheck')
+  gatewayCheckbox.onchange = showHideGateways;
 }
 
 async function update(zoom) {
@@ -59,7 +62,7 @@ async function update(zoom) {
   }
 
   //Show the gateways on the map
-  createMarkerList(createGatewayPointsJson(gateways), true, map);
+  createMarkerList(createGatewayPointsJson(gateways), true, map, true);
 
   //updates the grid to what the new JSON specifies
   await fetchJSON(gridJsonURL, function(json) {
@@ -254,7 +257,7 @@ function createGatewayPointsJson(data) {
   return (json);
 }
 
-function createMarkerList(dataJson, addToMap, map) {
+function createMarkerList(dataJson, addToMap, map, isGateway) {
   dataJson.features.forEach(function(marker) {
     if (globalUnitsList.hasOwnProperty(marker.properties.name)) {
       if (globalUnitsList[marker.properties.name].properties.time != marker.properties.time
@@ -279,7 +282,6 @@ function createMarkerList(dataJson, addToMap, map) {
       }
     } else {
       var el = document.createElement('div');
-      el.className = 'marker';
       el.innerHTML = "<img width=100% height=100% src='" + marker.properties.img + "' onerror=\"javascript:this.src='icons/grey.png'\">";
       if (iconRound) {
         el.style.borderRadius = Math.min(iconSize[0], iconSize[1]) + "em"
@@ -292,6 +294,12 @@ function createMarkerList(dataJson, addToMap, map) {
 
       var popup = new mapboxgl.Popup().setHTML(marker.properties.message);
       mapboxMarker.setPopup(popup);
+
+      if(isGateway)
+      {
+        el.style.visibility = (document.getElementById('gatewayCheck').checked) ? "visible" : "hidden";
+        el.className = 'gateway'
+      }
 
       // add markers to list
       globalMarkerList[marker.properties.name] = mapboxMarker;
@@ -333,4 +341,14 @@ function perc2color(perc) {
 	}
 	var h = r * 0x10000 + g * 0x100 + b * 0x1;
 	return '#' + ('000000' + h.toString(16)).slice(-6);
+}
+
+function showHideGateways(value)
+{
+  let markers = document.getElementsByClassName("gateway");
+  let visibility = (value.srcElement.checked) ? "visible" : "hidden";
+
+  for (let i = 0; i < markers.length; i++) {
+    markers[i].style.visibility = visibility;
+  }
 }

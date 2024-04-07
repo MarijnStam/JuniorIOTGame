@@ -17,6 +17,15 @@ body {
   font-size: 2em;
 }
 
+.gatewayCheckbox {
+  position: absolute;
+  top: 5;
+  bottom: 50;
+  border-radius: 20px;
+  padding: 4px 8px 4px 8px;
+  font-size: 1.2em;
+}
+
 
 /**
 * Create a position for the map
@@ -49,6 +58,13 @@ body {
   background-repeat: no-repeat;
   background-size: cover;
   cursor: pointer;
+}
+
+.gateway {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
 }
 
 .mapboxgl-popup-content {
