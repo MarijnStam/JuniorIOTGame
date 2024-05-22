@@ -28,9 +28,6 @@ function initMap() {
   window.setInterval(function() {
     update(false)
   }, refreshTime);
-
-  var gatewayCheckbox = document.getElementById('gatewayCheck')
-  gatewayCheckbox.onchange = showHideGateways;
 }
 
 async function update(zoom) {
@@ -58,7 +55,25 @@ async function update(zoom) {
   
       //Link the gateway objects back to the node so we can visualize this on the map (TODO LATER)
       node.gateways = gatewayObjects;
+
+      if(document.getElementsByClassName('dropDown')[0].value === "gateways")
+      {
+        //Draw the connections between nodes and gateways
+        drawGatewayConnections(node, true);
+      }
+      else
+      {
+        drawGatewayConnections(node, false);
+      }
     }
+  }
+
+  //Make the gateway markers visible/hidden on the map
+  let markers = document.getElementsByClassName("gateway");
+  let visibility = (document.getElementsByClassName('dropDown')[0].value === "gateways") ? "visible" : "hidden";
+
+  for (let i = 0; i < markers.length; i++) {
+    markers[i].style.visibility = visibility;
   }
 
   //Show the gateways on the map
@@ -128,7 +143,7 @@ function createGridGeoJSON(grid, teams) {
         team = defaultGridTeam;
       }
 
-      let color = '';
+      let color = '#ffffff';
       if(document.getElementsByClassName('dropDown')[0].value === "game"){
         color = '#' + teams[team].color;
       }else if(document.getElementsByClassName('dropDown')[0].value === "temp"){
@@ -151,7 +166,7 @@ function createGridGeoJSON(grid, teams) {
           color = '#111111';
         }
       }
-
+  
       json.features.push({
         'type': 'Feature',
         'geometry': {
@@ -297,7 +312,7 @@ function createMarkerList(dataJson, addToMap, map, isGateway) {
 
       if(isGateway)
       {
-        el.style.visibility = (document.getElementById('gatewayCheck').checked) ? "visible" : "hidden";
+        el.style.visibility = "hidden";
         el.className = 'gateway'
       }
 
@@ -343,12 +358,46 @@ function perc2color(perc) {
 	return '#' + ('000000' + h.toString(16)).slice(-6);
 }
 
-function showHideGateways(value)
+function drawGatewayConnections(node, draw)
 {
-  let markers = document.getElementsByClassName("gateway");
-  let visibility = (value.srcElement.checked) ? "visible" : "hidden";
+  node.gateways.forEach(gateway => {
+    if(gateway.location != undefined)
+    {
+      if(map.getSource(node.dev_id + "-" + gateway.gateway_ids.gateway_id) == undefined)
+      {
+        map.addSource(node.dev_id + "-" + gateway.gateway_ids.gateway_id, {
+            'type': 'geojson',
+            'data': {
+                'type': 'Feature',
+                'properties': {},
+                'geometry': {
+                    'type': 'LineString',
+                    'coordinates': [
+                        [node.long, node.lat], 
+                        [gateway.location.longitude, gateway.location.latitude],
+                    ]
+                }
+            }
+        });
+        map.addLayer({
+          'id': node.dev_id + "-" + gateway.gateway_ids.gateway_id,
+          'type': 'line',
+          'source': node.dev_id + "-" + gateway.gateway_ids.gateway_id,
+          'layout': {
+              'line-join': 'round',
+              'line-cap': 'round',
+              'visibility': 'visible'
+          },
+          'paint': {
+              'line-color': '#ff0000',
+              'line-width': 6,
+              'line-dasharray': [0, 3]
+          }
+        });
+      }
 
-  for (let i = 0; i < markers.length; i++) {
-    markers[i].style.visibility = visibility;
-  }
+        let visibility = draw ? "visible" : "none";
+        map.setLayoutProperty(node.dev_id + "-" + gateway.gateway_ids.gateway_id, 'visibility', visibility);
+    }
+  });
 }
